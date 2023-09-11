@@ -9,102 +9,17 @@ using namespace std;
 static string input_mode = "XInput";
 typedef unsigned char BYTE;
 
-void handleDirectInputGamePlay(BYTE& byte0, BYTE& byte1, BYTE& byte2)
-{
-	// from jvsemu
-	if (input_mode != "DirectInput")
-	{
-		return;
-	}
+static bool deviceStatus[16] = { false }; // DInput support at most 16 devices
 
-	JOYINFOEX joy;
-	joy.dwSize = sizeof(joy);
-	joy.dwFlags = JOY_RETURNALL;
-	for (UINT joystickIndex = 0; joystickIndex < 16; ++joystickIndex)
-	{
-		if (joyGetPosEx(joystickIndex, &joy) == JOYERR_NOERROR)
-		{
-			if (joy.dwPOV == 0)
-			{
-				OutputDebugStringA("Up Detected from Joystick");
-				byte1 |= static_cast<char>(1 << 5);
-			}
-			if (joy.dwPOV == 4500)
-			{
-				OutputDebugStringA("Up Right Detected from Joystick");
-				byte1 |= static_cast<char>(1 << 5);
-				byte1 |= static_cast<char>(1 << 2);
-			}
-			if (joy.dwPOV == 9000)
-			{
-				OutputDebugStringA("Right Detected from Joystick");
-				byte1 |= static_cast<char>(1 << 2);
-			}
-			if (joy.dwPOV == 13500)
-			{
-				OutputDebugStringA("Right Down Detected from Joystick");
-				byte1 |= static_cast<char>(1 << 2);
-				byte1 |= static_cast<char>(1 << 4);
-			}
-			if (joy.dwPOV == 18000)
-			{
-				OutputDebugStringA("Down Detected from Joystick");
-				byte1 |= static_cast<char>(1 << 4);
-			}
-			if (joy.dwPOV == 22500)
-			{
-				OutputDebugStringA("Down Left Detected from Joystick");
-				byte1 |= static_cast<char>(1 << 4);
-				byte1 |= static_cast<char>(1 << 3);
-			}
-			if (joy.dwPOV == 27000)
-			{
-				OutputDebugStringA("Left Detected from Joystick");
-				byte1 |= static_cast<char>(1 << 3);
-			}
-			if (joy.dwPOV == 31500)
-			{
-				OutputDebugStringA("Top Left Detected from Joystick");
-				byte1 |= static_cast<char>(1 << 3);
-				byte1 |= static_cast<char>(1 << 5);
-			}
-			//int intJoyDwButtons = (int)joy.dwButtons;
-			//if (intJoyDwButtons & key_bind.ArcadeButton1)
-			//{
-			//	OutputDebugStringA("Button 1 Detected from Joystick");
-			//	byte1 |= static_cast<char> (1 << 1);
-			//}
-			//if (intJoyDwButtons & key_bind.ArcadeButton2)
-			//{
-			//	OutputDebugStringA("Button 2 Detected from Joystick");
-			//	byte1 |= static_cast<char> (1);
-			//}
-			//if (intJoyDwButtons & key_bind.ArcadeButton3)
-			//{
-			//	OutputDebugStringA("Button 3 Detected from Joystick");
-			//	byte2 |= static_cast<char> (1 << 7);
-			//}
-			//if (intJoyDwButtons & key_bind.ArcadeButton4)
-			//{
-			//	OutputDebugStringA("Button 4 Detected from Joystick");
-			//	byte2 |= static_cast<char> (1 << 6);
-			//}
-			//if (intJoyDwButtons & key_bind.ArcadeStartButton)
-			//{
-			//	OutputDebugStringA("Start Button Detected from Joystick");
-			//	byte1 |= static_cast<char>(1 << 7);
-			//}
-			//if (intJoyDwButtons & key_bind.ArcadeTest)
-			//{
-			//	OutputDebugStringA("Test Button Detected from Joystick");
-			//	byte0 |= static_cast<char>(1 << 7);
-			//}
-		}
-	}
+void log(char const * msg) {
+#ifdef _DEBUG
+	OutputDebugStringA(msg);
+#else
+	// nothing
+#endif
 }
 
-
-void handleXInputGamePlay() {
+void detectXInputDevice() {
 	DWORD dwResult;
 	for (DWORD i = 0; i < XUSER_MAX_COUNT; i++)
 	{
@@ -116,14 +31,33 @@ void handleXInputGamePlay() {
 
 		if (dwResult == ERROR_SUCCESS)
 		{
-			OutputDebugStringA(string("XInput controller detected: id = " + to_string(i) + '\n').c_str());
 			// Controller is connected
-		}
-		else
-		{
-			// Controller is not connected
+			deviceStatus[i] = true;
 		}
 	}
+}
+
+void handleXInputGamePlay() {
+	XINPUT_KEYSTROKE input;
+	for (int i = 0; i < XUSER_MAX_COUNT; i++) {
+		if (deviceStatus[i]) {
+			if (XInputGetKeystroke(i, 0, &input) == ERROR_SUCCESS && input.Flags != XINPUT_KEYSTROKE_KEYUP) {
+				log(string("Device " + to_string(i) + " Pressed " + to_string(input.VirtualKey) + '\n').c_str());
+			}
+		}
+	}
+}
+
+LRESULT CALLBACK HookProc(
+	int nCode,
+	WPARAM wParam,
+	LPARAM lParam
+)
+{
+	// process event
+	//...
+
+		return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow) {
@@ -131,17 +65,24 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 	BYTE byte0 = 0;
 	BYTE byte1 = 0;
 	BYTE byte2 = 0;
-	OutputDebugStringA(string("START capturing inputs\nMode = " + input_mode + '\n').c_str());
-	//OutputDebugStringA();
-	while (true) {
-		if (input_mode == "DirectInput") {
-			handleDirectInputGamePlay(byte0, byte1, byte2);
+	log(string("START capturing inputs\nMode = " + input_mode + '\n').c_str());
+	//log();
+	// 
+	if (input_mode == "XInput") {
+		handleXInputGamePlay();
+		detectXInputDevice();
+		for (int i = 0;i < XUSER_MAX_COUNT; i++) {
+			if (deviceStatus[i]) {
+				log(string("XInput controller detected: id = " + to_string(i) + '\n').c_str());
+			}
 		}
-		else if (input_mode == "XInput") {
-			handleXInputGamePlay();
-			break;
-		}
+		//while (true) {
+		//	handleXInputGamePlay();
+		//}
 	}
+	// start hooking target dll
+
+
 	CoUninitialize();
 
 }

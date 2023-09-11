@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33627.172
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KeyMapper", "KeyMapper\KeyMapper.vcxproj", "{92940ACA-5A82-4ED9-9EAF-5547F466B7CE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KeyMapper", "KeyMapper.vcxproj", "{92940ACA-5A82-4ED9-9EAF-5547F466B7CE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +26,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {1F31336F-20E5-44E1-893A-EF0F99D213FA}
+		SolutionGuid = {F53BDE66-EE40-43DB-BCF6-CE0882C03810}
 	EndGlobalSection
 EndGlobal
