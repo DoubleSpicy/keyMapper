@@ -1,8 +1,11 @@
 #include <iostream>
 #include <stdio.h>
 #include <string>
+
 #include "Windows.h"
 #include "xinput.h"
+#include "minhook/include/MinHook.h"
+#include <tchar.h>
 
 using namespace std;
 
@@ -66,8 +69,8 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 	BYTE byte1 = 0;
 	BYTE byte2 = 0;
 	log(string("START capturing inputs\nMode = " + input_mode + '\n').c_str());
-	//log();
-	// 
+	
+	// detect your stick first
 	if (input_mode == "XInput") {
 		handleXInputGamePlay();
 		detectXInputDevice();
@@ -76,12 +79,13 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 				log(string("XInput controller detected: id = " + to_string(i) + '\n').c_str());
 			}
 		}
-		//while (true) {
-		//	handleXInputGamePlay();
-		//}
 	}
-	// start hooking target dll
-
+	// find pid of target application
+	//https://stackoverflow.com/questions/16530871/findwindow-does-not-find-the-a-window
+	HWND windowHandle = FindWindow(NULL, _T("Steam"));
+	DWORD threadId = GetWindowThreadProcessId(windowHandle, NULL);
+	log(string("thread id is: " + to_string(threadId) + '\n').c_str());
+	//HHOOK hook = ::SetWindowsHookEx(WH_CBT, HookCBTProc, hInst, threadId);
 
 	CoUninitialize();
 
