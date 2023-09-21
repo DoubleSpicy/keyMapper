@@ -14,9 +14,10 @@ typedef unsigned char BYTE;
 
 static bool deviceStatus[16] = { false }; // DInput support at most 16 devices
 
-void log(char const * msg) {
+void log(string msg) {
+	cout << msg;
 #ifdef _DEBUG
-	OutputDebugStringA(msg);
+	OutputDebugStringA(msg.c_str());
 #else
 	// nothing
 #endif
@@ -45,7 +46,7 @@ void handleXInputGamePlay() {
 	for (int i = 0; i < XUSER_MAX_COUNT; i++) {
 		if (deviceStatus[i]) {
 			if (XInputGetKeystroke(i, 0, &input) == ERROR_SUCCESS && input.Flags != XINPUT_KEYSTROKE_KEYUP) {
-				log(string("Device " + to_string(i) + " Pressed " + to_string(input.VirtualKey) + '\n').c_str());
+				log(string("Device " + to_string(i) + " Pressed " + to_string(input.VirtualKey) + '\n'));
 			}
 		}
 	}
@@ -60,7 +61,7 @@ LRESULT CALLBACK HookProc(
 	// process event
 	//...
 
-		return CallNextHookEx(NULL, nCode, wParam, lParam);
+	return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
@@ -87,40 +88,50 @@ LRESULT CALLBACK KeyboardCallback(int code, WPARAM wParam, LPARAM lParam) {
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow) {
 	CoInitialize(0);
+	AllocConsole();
+	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
 	BYTE byte0 = 0;
 	BYTE byte1 = 0;
 	BYTE byte2 = 0;
-	log(string("START capturing inputs\nMode = " + input_mode + '\n').c_str());
+	log(string("START capturing inputs\nMode = " + input_mode + '\n'));
 	// detect your stick first
 	if (input_mode == "XInput") {
 		handleXInputGamePlay();
 		detectXInputDevice();
 		for (int i = 0;i < XUSER_MAX_COUNT; i++) {
 			if (deviceStatus[i]) {
-				log(string("XInput controller detected: id = " + to_string(i) + '\n').c_str());
+				log(string("XInput controller detected: id = " + to_string(i) + '\n'));
 			}
 		}
 	}
 	// find pid of target application
 	//https://stackoverflow.com/questions/16530871/findwindow-does-not-find-the-a-window
-	string targetAppName = "Steam";
-	//log(string("search pid in pattern: " + targetAppName + '\n').c_str());
+	string targetAppName = "Notepad";
+	//log(string("search pid in pattern: " + targetAppName + '\n'));
 	HWND windowHandle = FindWindowA(NULL, targetAppName.c_str());
 	DWORD threadId = GetWindowThreadProcessId(windowHandle, NULL);
-	log(string("thread id is: " + to_string(threadId) + '\n').c_str());
-	HHOOK hook = ::SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardCallback, 0, threadId);
+	log(string("thread id is: " + to_string(threadId) + '\n'));
+	HHOOK hook = ::SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardCallback, 0, threadId);
 	if (!hook) {
-	// https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes
-		log(string("Hook failed\n").c_str());
-		log(string("Error code: " + to_string(GetLastError()) + '\n').c_str());
+		// https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes
+		log(string("Hook failed\n"));
+		log(string("Error code: " + to_string(GetLastError()) + '\n'));
 	}
 	else {
-		log(string("Hook successed!\n").c_str());
+		log(string("Hook successed!\n"));
+		MSG message;
+		while (GetMessage(&message, NULL, NULL, NULL) > 0) {
+			TranslateMessage(&message);
+			DispatchMessage(&message);
+		}
+		UnhookWindowsHookEx(hook);
 	}
 
-	while (true) {
-
-	}
+//	MH_Initialize();
+//	MH_CreateHookApi(L"kernel32.dll", "WriteFile", WriteFileWrap, reinterpret_cast<void**>(&g_origWriteFile));
+//	MH_EnableHook(nullptr);
+//}
+	system("pause");
 	/*cin >> block;*/
 	CoUninitialize();
 	return WM_QUIT;
