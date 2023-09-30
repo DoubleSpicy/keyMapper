@@ -15,7 +15,7 @@ using namespace std;
 
 static string input_mode = "XInput";
 static DWORD threadId = -1;
-string targetAppName = "Notepad";
+string targetAppName = "GUNDAM EXTREME";
 typedef unsigned char BYTE;
 
 static bool deviceStatus[16] = { false }; // DInput support at most 16 devices
@@ -85,7 +85,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 		log("Fail to load dll!\n");
 	}
 
-	auto keyProcAddress = reinterpret_cast<HOOKPROC>(GetProcAddress(libToInject, "KeyboardProc"));
+	auto keyProcAddress = reinterpret_cast<HOOKPROC>(GetProcAddress(libToInject, "JoyProc"));
 	if (keyProcAddress == nullptr) {
 		log("Fail to find function!\n");
 	}
@@ -94,6 +94,13 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 		keyProcAddress, libToInject, threadId);
 	if (hook == nullptr) {
 		log("SetWindowsHookEx fail, " + GetLastError() + '\n');
+	}
+	else {
+		MSG Message;
+		while (GetMessage(&Message, NULL, NULL, NULL)) {
+			TranslateMessage(&Message);
+			DispatchMessage(&Message);
+		}
 	}
 	// press any key to continue
 	system("pause");
