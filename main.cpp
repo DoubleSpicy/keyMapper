@@ -3,7 +3,7 @@
 #include <string>
 
 #ifndef WINDOWS_H
-	#include "Windows.h"
+#include "Windows.h"
 #endif
 
 #include "xinput.h"
@@ -74,7 +74,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 			}
 		}
 	}
-	
+
 	HWND windowHandle = NULL;
 	EnumWindows(EnumWindowsProc, reinterpret_cast<LPARAM>(&windowHandle));
 	threadId = GetWindowThreadProcessId(windowHandle, NULL);
